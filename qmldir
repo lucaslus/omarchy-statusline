@@ -1,0 +1,9 @@
+singleton Metrics 1.0 Metrics.qml
+Widget 1.0 Widget.qml
+Detail 1.0 Detail.qml
+PulseText 1.0 PulseText.qml
+CoreBars 1.0 CoreBars.qml
+Sparkline 1.0 Sparkline.qml
+Meter 1.0 Meter.qml
+SettingsPage 1.0 SettingsPage.qml
+PulseIcon 1.0 PulseIcon.qml

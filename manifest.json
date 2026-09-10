@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "lucas.system-pulse",
+  "name": "System Pulse",
+  "version": "0.2.0",
+  "author": "lucas",
+  "description": "CPU, memory, GPU and temperature at a glance, with live history and Omarchy theme integration.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Widget.qml"
+  },
+  "barWidget": {
+    "displayName": "System Pulse",
+    "category": "System",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "layout": "overview",
+      "autoStart": true,
+      "intervalSeconds": 2,
+      "showHistory": true,
+      "metrics": [
+        "cpu",
+        "memory",
+        "gpu",
+        "heat"
+      ]
+    }
+  }
+}

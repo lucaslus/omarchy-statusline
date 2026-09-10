@@ -1,0 +1,43 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check tag matches manifest
+        run: |
+          python3 - <<'PY'
+          import json, os
+          version = json.load(open('manifest.json'))['version']
+          assert os.environ['GITHUB_REF_NAME'] == 'v' + version, 'Tag must match manifest version'
+          PY
+      - run: python3 -m unittest discover -s tests -v
+      - run: bash -n scripts/install.sh scripts/uninstall.sh
+      - run: python3 -m json.tool manifest.json >/dev/null
+  publish:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package source and publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          asset="omarchy-statusline-${RELEASE_TAG}.tar.gz"
+          git archive --format=tar.gz --prefix="omarchy-statusline-${RELEASE_TAG}/" HEAD > "$asset"
+          sha256sum "$asset" > SHA256SUMS
+          gh release create "$RELEASE_TAG" "$asset" SHA256SUMS \
+            --verify-tag --title "System Pulse ${RELEASE_TAG}" --notes-file RELEASE_NOTES.md
