@@ -129,3 +129,7 @@ Files: `Widget.qml` is the bar entry point, `Detail.qml` is the popup, `Settings
 ## Releases
 
 Set the version in `manifest.json`, update `RELEASE_NOTES.md`, commit and push, then push a matching `vX.Y.Z` tag. GitHub Actions checks the version, runs Python tests and shell validation, and publishes a source archive with SHA-256 checksums. A failed validation prevents publication.
+
+## License
+
+[MIT License](LICENSE) · Copyright (c) 2026 lucas.
