@@ -1,4 +1,4 @@
-# Omarchy Statusline — System Pulse
+# Omarchy Statusline
 
 A native **Omarchy Shell system monitor** built with Quickshell/QML and Python. Live CPU, GPU, memory and temperature graphs fit directly into your Linux status bar and follow your Omarchy theme.
 
@@ -78,9 +78,9 @@ For more readable stacked labels, set `size-horizontal = 36` in the `[bar]` sect
 
 ## Startup, pause and exit
 
-Omarchy already starts its shell at login; System Pulse does not install another startup service. **Start automatically at login** controls whether sampling begins when the shell starts. When off, only a small launch button remains until **Start monitoring** is selected.
+Omarchy already starts its shell at login; Omarchy Statusline does not install another startup service. **Start automatically at login** controls whether sampling begins when the shell starts. When off, only a small launch button remains until **Start monitoring** is selected.
 
-**Exit this session** stops sampling and retries on all monitors, keeping that small launch button. Next login (or shell restart) follows the saved startup preference. **Disable System Pulse** removes the widget entirely; re-enable it through Omarchy’s plugin settings or `omarchy plugin enable lucas.system-pulse`.
+**Exit this session** stops sampling and retries on all monitors, keeping that small launch button. Next login (or shell restart) follows the saved startup preference. **Disable Omarchy Statusline** removes the widget entirely; re-enable it through Omarchy’s plugin settings or `omarchy plugin enable lucas.system-pulse`.
 
 The collector runs only while at least one widget consumes it and the session is enabled. Removing the last widget stops both its process and watchdog.
 

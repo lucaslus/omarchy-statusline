@@ -24,18 +24,18 @@ def local_status(repo=INSTALL_PATH):
     manifest = json.loads((repo / "manifest.json").read_text())
     status = {"version": manifest["version"], "canUpdate": False, "target": "", "development": repo.is_symlink() or (repo / ".git").is_file()}
     if status["development"]:
-        status["message"] = "Development link: update this source checkout manually. Automatic updates are disabled."
+        status["message"] = "Development install · update source manually."
         return status
     if not (repo / ".git").exists():
-        status["message"] = "Manual installation. Install with omarchy plugin add to enable Git updates."
+        status["message"] = "Manual install · Git updates unavailable."
         return status
     try:
         status["head"] = git(repo, "rev-parse", "HEAD")
     except RuntimeError:
-        status["message"] = "This checkout has no committed release yet."
+        status["message"] = "No committed version."
         return status
     status["dirty"] = bool(git(repo, "status", "--porcelain", "--untracked-files=all"))
-    status["message"] = "Local changes detected; automatic updates are disabled." if status["dirty"] else "Ready to check for updates."
+    status["message"] = "Local changes · update blocked." if status["dirty"] else "Not checked yet."
     return status
 
 
@@ -47,9 +47,9 @@ def check(repo=INSTALL_PATH):
     git(repo, "fetch", "--quiet", "--no-tags", "origin", "HEAD")
     target = git(repo, "rev-parse", "FETCH_HEAD")
     if target == result["head"]:
-        result["message"] = "You are up to date."
+        result["message"] = "Up to date."
     elif git(repo, "merge-base", result["head"], target) != result["head"]:
-        result["message"] = "Local and remote history diverged. Update manually."
+        result["message"] = "History diverged · update manually."
     else:
         validate_target(repo, target)
         result.update(canUpdate=True, target=target, message="Update available: " + target[:8])
@@ -59,7 +59,7 @@ def check(repo=INSTALL_PATH):
 def validate_target(repo, target):
     manifest = json.loads(git(repo, "show", target + ":manifest.json"))
     if manifest.get("id") != PLUGIN_ID or manifest.get("schemaVersion") != 1:
-        raise RuntimeError("The update is not a compatible System Pulse plugin.")
+        raise RuntimeError("The update is not a compatible Omarchy Statusline plugin.")
     entry = manifest.get("entryPoints", {}).get("barWidget")
     if not isinstance(entry, str) or not entry or Path(entry).is_absolute() or ".." in Path(entry).parts:
         raise RuntimeError("The update has an invalid bar widget entry point.")
@@ -83,7 +83,7 @@ def apply_update(repo, target):
             raise RuntimeError("The checked update is no longer a fast-forward. Check again.")
         validate_target(repo, target)
         git(repo, "merge", "--ff-only", "--no-edit", "--no-overwrite-ignore", target)
-    return "Updated to " + target[:8] + ". Reload Omarchy Shell to finish applying the update."
+    return "Updated to " + target[:8] + ". Reload shell to apply."
 
 
 def main():

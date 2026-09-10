@@ -42,9 +42,9 @@ Panel {
         id: button
         anchors.fill: parent
         bar: root.bar
-        text: "System Pulse"
+        text: "Omarchy Statusline"
         labelVisible: false
-        tooltipText: !Metrics.sessionEnabled ? "System Pulse paused · click to open" : Metrics.stale ? "System Pulse · telemetry unavailable" : "System Pulse · click for details"
+        tooltipText: !Metrics.sessionEnabled ? "Omarchy Statusline paused · click to open" : Metrics.stale ? "Omarchy Statusline · telemetry unavailable" : "Omarchy Statusline · click for details"
         onPressed: b => { if (b === Qt.RightButton) { detail.showSettings = true; root.open() } else root.toggle() }
         Rectangle {
             anchors.fill: parent; anchors.margins: 1

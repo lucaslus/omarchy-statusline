@@ -30,4 +30,4 @@ if [[ $registered != true ]]; then
   exit 1
 fi
 omarchy plugin enable lucas.system-pulse --section right --index 0
-printf 'System Pulse is installed in your existing bar. Keep the repository at %s\n' "$repo"
+printf 'Omarchy Statusline is installed in your existing bar. Keep the repository at %s\n' "$repo"

@@ -218,8 +218,8 @@ ColumnLayout {
         visible: root.category === "updates"
         Layout.fillWidth: true
         spacing: Style.space(8)
-    Title { text: "Updates" }
-    Hint { text: "System Pulse " + (root.updateStatus.version || "0.2.0") + " · " + root.updateStatus.message }
+    Title { text: "Version " + (root.updateStatus.version || "0.2.0") }
+    Hint { text: root.updateStatus.message }
     Flow {
         Layout.fillWidth: true; spacing: Style.space(7)
         Button { iconText: "↻"; text: updater.running ? "Checking…" : "Check for updates"; enabled: !updater.running; onClicked: root.checkUpdates("check") }
@@ -227,8 +227,7 @@ ColumnLayout {
             iconText: "↓"; text: "Update"; tooltipText: "Install update in terminal"; enabled: root.updateStatus.canUpdate === true && !updater.running
             onClicked: Quickshell.execDetached(["omarchy", "launch", "terminal", "python3", root.helper, "apply", root.updateStatus.target])
         }
-        Button { iconText: "↻"; text: "Reload shell"; onClicked: Quickshell.execDetached(["omarchy", "restart", "shell"]) }
+        Button { iconText: "↻"; text: "Reload shell"; tooltipText: "Restart Omarchy Shell to apply updates"; onClicked: Quickshell.execDetached(["omarchy", "restart", "shell"]) }
     }
-    Hint { text: "Reload restarts Omarchy Shell to apply updates." }
     }
 }

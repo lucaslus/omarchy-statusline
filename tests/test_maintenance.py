@@ -50,7 +50,7 @@ class UpdateTests(unittest.TestCase):
         link = self.root / 'development'
         link.symlink_to(self.local, target_is_directory=True)
         self.assertTrue(maintenance.check(link)['development'])
-        with self.assertRaisesRegex(RuntimeError, 'Development link'):
+        with self.assertRaisesRegex(RuntimeError, 'Development install'):
             maintenance.apply_update(link, self.run_git(self.local, 'rev-parse', 'HEAD'))
 
     def test_edits_after_check_block_update(self):

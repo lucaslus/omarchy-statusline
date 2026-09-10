@@ -1,4 +1,4 @@
-First public release of System Pulse, a native Omarchy Shell system monitor.
+First public release of Omarchy Statusline, a native Omarchy Shell system monitor.
 
 - CPU usage, per-core bars, memory meter and GPU history in the existing status bar.
 - Separate CPU and GPU temperatures with live graphs.

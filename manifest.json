@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "lucas.system-pulse",
-  "name": "System Pulse",
+  "name": "Omarchy Statusline",
   "version": "0.2.0",
   "author": "lucas",
   "description": "CPU, memory, GPU and temperature at a glance, with live history and Omarchy theme integration.",
@@ -12,7 +12,7 @@
     "barWidget": "Widget.qml"
   },
   "barWidget": {
-    "displayName": "System Pulse",
+    "displayName": "Omarchy Statusline",
     "category": "System",
     "allowMultiple": false,
     "defaultSection": "right",

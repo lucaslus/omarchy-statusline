@@ -40,4 +40,4 @@ jobs:
           git archive --format=tar.gz --prefix="omarchy-statusline-${RELEASE_TAG}/" HEAD > "$asset"
           sha256sum "$asset" > SHA256SUMS
           gh release create "$RELEASE_TAG" "$asset" SHA256SUMS \
-            --verify-tag --title "System Pulse ${RELEASE_TAG}" --notes-file RELEASE_NOTES.md
+            --verify-tag --title "Omarchy Statusline ${RELEASE_TAG}" --notes-file RELEASE_NOTES.md
