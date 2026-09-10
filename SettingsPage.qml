@@ -219,7 +219,7 @@ ColumnLayout {
         visible: root.category === "updates"
         Layout.fillWidth: true
         spacing: Style.space(8)
-    Title { text: "Version " + (root.updateStatus.version || "0.2.0") }
+    Title { text: "Version " + (root.updateStatus.version || "0.2.1") }
     Hint { text: root.updateStatus.message }
     Flow {
         Layout.fillWidth: true; spacing: Style.space(7)

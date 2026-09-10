@@ -2,9 +2,9 @@
   "schemaVersion": 1,
   "id": "lucas.system-pulse",
   "name": "Omarchy Statusline",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "lucas",
-  "description": "CPU, memory, GPU and temperature at a glance, with live history and Omarchy theme integration.",
+  "description": "CPU, memory, GPU, disk and temperature at a glance, with live history and Omarchy theme integration.",
   "kinds": [
     "bar-widget"
   ],

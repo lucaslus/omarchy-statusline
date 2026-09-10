@@ -1,19 +1,23 @@
-First public release of Omarchy Statusline, a native Omarchy Shell system monitor.
+Omarchy Statusline v0.2.1 adds disk monitoring and simplifies the update interface.
 
-- CPU usage, per-core bars, memory meter and GPU history in the existing status bar.
-- Separate CPU and GPU temperatures with live graphs.
-- Compact system panel with CPU/GPU models, VRAM, power, fan speed and hotspot temperature.
-- Omarchy theme integration, custom layouts, metric ordering and sampling controls.
-- Shared multi-monitor collector, startup controls and manual updates.
+- Show root filesystem (`/`) usage, used capacity and free space in the system panel.
+- Show aggregate read/write throughput across whole hardware drives, without double-counting partitions or device-mapper layers.
+- Add an optional **Disk /** status bar meter in Settings → Layout.
+- Unify display names as **Omarchy Statusline** and shorten update messages.
+- Preserve existing plugin identity and saved settings for compatibility.
+
+The panel keeps its fixed size; scroll to see additional information. Disk throughput is unavailable until the second sample. Existing status bar layouts remain unchanged until Disk is enabled.
 
 ## Install
 
-Requires the Quickshell-based Omarchy Shell and Python 3.11 or newer.
+Requires Quickshell-based Omarchy Shell and Python 3.11+.
 
 ```sh
 omarchy plugin add https://github.com/lucaslus/omarchy-statusline.git --enable --yes
 ```
 
-The attached archive contains the tagged source; SHA256SUMS verifies its checksum. Extract it and run `./scripts/install.sh` for a development-style installation (keep the extracted directory in place). Native Git installation is recommended for in-app updates.
+For an existing Git-managed installation, use Settings → Updates, then reload Omarchy Shell. Development checkouts should be updated manually.
 
-Python and shell checks run in CI before publishing. Native QML regression tests were run locally on Omarchy. NVIDIA support is fixture-tested; hardware validation was performed with AMD. Memory module model/speed detection is not included.
+The source archive includes an installer (`./scripts/install.sh`); keep its extracted directory in place. SHA256SUMS provides the archive checksum.
+
+Validation: 23 Python tests, shell syntax checks and local native QML regression tests. CI repeats Python and shell checks before publishing; native QML tests require Omarchy and run locally.
