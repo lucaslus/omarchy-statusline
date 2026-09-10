@@ -1,5 +1,7 @@
 # Omarchy Statusline
 
+[![LINUX DO community](https://img.shields.io/badge/LINUX-DO-FFB003.svg)](https://linux.do/)
+
 A native **Omarchy Shell system monitor** built with Quickshell/QML and Python. Live CPU, GPU, memory and temperature graphs fit directly into your Linux status bar and follow your Omarchy theme.
 
 The default widget shows CPU load with per-core bars, memory usage with a meter, GPU utilization with a sparkline, and separate CPU/GPU temperatures with sparklines. Click it for the system detail panel with 60-second history, VRAM, power, fan speed, CPU/GPU/hotspot temperatures. Escape, the close button, or a click outside dismisses the panel.
