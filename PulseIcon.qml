@@ -41,6 +41,12 @@ Canvas {
             c.strokeRect(3, 8, 22, 12)
             for (let x = 6; x <= 20; x += 7) c.strokeRect(x, 11, 4, 6)
             for (let x = 5; x <= 23; x += 3) line(x, 20, x, 23)
+        } else if (name === "disk") {
+            c.strokeRect(5, 3, 18, 22)
+            circle(14, 12, 6)
+            circle(14, 12, 1.5)
+            line(14, 12, 20, 18)
+            line(8, 22, 10, 22)
         } else if (name === "heat") {
             c.beginPath(); c.moveTo(10, 17); c.lineTo(10, 6)
             c.arc(14, 6, 4, Math.PI, Math.PI * 2)

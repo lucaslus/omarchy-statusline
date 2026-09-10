@@ -22,6 +22,8 @@ FocusScope {
     onShowSettingsChanged: scroll.contentY = 0
     signal closeRequested()
     readonly property var s: Metrics.sample
+    readonly property var disk: s.disk || ({})
+    readonly property color diskColor: Metrics.palette("cyan", "color6", Color.accent)
     Keys.onEscapePressed: { if (showSettings) showSettings = false; else closeRequested() }
 
     component Separator: Rectangle {
@@ -128,6 +130,21 @@ FocusScope {
                         Separator {}
                     }
                 }
+                RowLayout {
+                    Layout.fillWidth: true
+                    PulseIcon { name: "disk"; ink: root.diskColor; Layout.preferredWidth: Style.space(22); Layout.preferredHeight: Style.space(22) }
+                    PulseText { text: "Disk /"; Layout.fillWidth: true }
+                    PulseText { text: Metrics.percent(root.disk.percent); color: root.diskColor }
+                }
+                Meter { Layout.fillWidth: true; Layout.preferredHeight: Style.space(6); value: root.disk.percent; ink: root.diskColor }
+                PulseText { text: Metrics.gib(root.disk.used) + " / " + Metrics.gib(root.disk.total) + " GiB · " + Metrics.gib(root.disk.free) + " GiB free"; font.pixelSize: Style.font.bodySmall; Layout.fillWidth: true }
+                PulseText {
+                    text: "All drives  ↓ " + Metrics.rate(root.disk.readRate) + "  ↑ " + Metrics.rate(root.disk.writeRate)
+                    font.pixelSize: Style.font.bodySmall
+                    Layout.fillWidth: true
+                    opacity: 0.7
+                }
+                Separator {}
                 PulseText { text: "Temperatures"; font.pixelSize: Style.font.bodySmall }
                 RowLayout {
                     Layout.fillWidth: true

@@ -6,6 +6,28 @@ import collector
 
 
 class TelemetryTests(unittest.TestCase):
+    def test_disk_rates_use_elapsed_time_and_reject_resets(self):
+        previous = {'sda': (1024, 2048)}
+        sample = collector.disk_sample({'sda': (3072, 6144)}, previous, 2)
+        self.assertEqual(sample['readRate'], 1024)
+        self.assertEqual(sample['writeRate'], 2048)
+        self.assertIsNone(collector.disk_sample(previous, {}, 2)['readRate'])
+        self.assertIsNone(collector.disk_sample({'sda': (0, 0)}, previous, 2)['readRate'])
+        self.assertIsNone(collector.disk_sample(previous, previous, 0)['readRate'])
+
+    def test_disk_counters_skip_partitions_and_virtual_layers(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / 'block/sda/device').mkdir(parents=True)
+            raw = '\n'.join(f'8 0 {name} 1 0 10 0 1 0 20 0 0 0 0' for name in ['sda', 'sda1', 'dm-0', 'loop0'])
+            self.assertEqual(collector.disk_counters(raw, root), {'sda': (5120, 10240)})
+
+    @patch('collector.shutil.disk_usage', side_effect=OSError)
+    def test_unavailable_disk_capacity_still_reports_io(self, usage):
+        result = collector.disk_sample({'sda': (10, 20)}, {'sda': (0, 0)}, 1)
+        self.assertIsNone(result['percent'])
+        self.assertEqual(result['readRate'], 10)
+
     def test_cpu_model_and_missing_info(self):
         self.assertEqual(collector.cpu_model('processor: 0\nmodel name : Intel Core i7-12700K'), 'Intel Core i7-12700K')
         self.assertEqual(collector.cpu_model('Hardware: ARM board'), 'ARM board')

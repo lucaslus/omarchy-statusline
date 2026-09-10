@@ -156,6 +156,7 @@ ColumnLayout {
                 cpu: Metrics.palette("green", "color2", Color.accent),
                 memory: Metrics.palette("magenta", "color5", Color.accent),
                 gpu: Metrics.palette("blue", "color4", Color.accent),
+                disk: Metrics.palette("cyan", "color6", Color.accent),
                 heat: Metrics.palette("yellow", "color3", Color.urgent)
             })[modelData]
             Layout.fillWidth: true
@@ -169,7 +170,7 @@ ColumnLayout {
             }
             Toggle {
                 Layout.fillWidth: true
-                label: ({cpu: "CPU", memory: "Memory", gpu: "GPU", heat: "CPU / GPU temperatures"})[modelData]
+                label: ({cpu: "CPU", memory: "Memory", gpu: "GPU", heat: "CPU / GPU temperatures", disk: "Disk /"})[modelData]
                 checked: parent.selected
                 enabled: !checked || root.preferences.metrics.length > 1
                 onClicked: root.toggleMetric(modelData)

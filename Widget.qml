@@ -20,6 +20,7 @@ Panel {
     readonly property var s: Metrics.sample
     readonly property var metrics: ({
         cpu: {name: "CPU", value: Metrics.percent(s.cpu), ink: cpuColor},
+        disk: {name: "DISK", value: Metrics.percent((s.disk || {}).percent), ink: Metrics.palette("cyan", "color6", cpuColor)},
         memory: {name: "MEM", value: Metrics.percent(s.memory.percent), ink: memoryColor},
         gpu: {name: "GPU", value: Metrics.percent(s.gpu.percent), ink: gpuColor},
         cpuHeat: {name: "CPU", value: Metrics.temp(s.cpuTemperature), ink: heatColor},
@@ -76,7 +77,7 @@ Panel {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: root.preferences.graphs
                         CoreBars { anchors.fill: parent; visible: modelData === "cpu"; values: root.s.cores; ink: root.cpuColor; spacing: 1 }
-                        Meter { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: Style.space(6); visible: modelData === "memory"; value: root.s.memory.percent; ink: root.memoryColor }
+                        Meter { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: Style.space(6); visible: modelData === "memory" || modelData === "disk"; value: modelData === "disk" ? (root.s.disk || {}).percent : root.s.memory.percent; ink: metric.ink }
                         Sparkline { anchors.fill: parent; visible: modelData === "gpu" || modelData === "cpuHeat" || modelData === "gpuHeat"; values: modelData === "gpu" ? Metrics.history.gpu : (modelData === "gpuHeat" ? Metrics.history.gpuTemp : Metrics.history.cpuTemp); ink: metric.ink }
                     }
                 }

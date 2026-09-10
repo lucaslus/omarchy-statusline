@@ -59,6 +59,37 @@ def memory(raw):
     return {"percent": round(100 * used / total, 1), "used": used, "total": total}
 
 
+def disk_counters(raw, sys):
+    counters = {}
+    for line in raw.splitlines():
+        fields = line.split()
+        if len(fields) < 14 or not (sys / "block" / fields[2] / "device").exists():
+            continue  # Whole hardware devices only; avoid partition/mapper double counting.
+        try:
+            counters[fields[2]] = (int(fields[5]) * 512, int(fields[9]) * 512)
+        except ValueError:
+            continue
+    return counters
+
+
+def disk_sample(current, previous, elapsed):
+    result = {"path": "/", "percent": None, "used": None, "total": None,
+              "free": None, "readRate": None, "writeRate": None}
+    try:
+        capacity = shutil.disk_usage("/")
+        result.update(total=capacity.total, used=capacity.used, free=capacity.free,
+                      percent=round(100 * capacity.used / capacity.total, 1) if capacity.total else None)
+    except OSError:
+        pass
+    common = current.keys() & previous.keys()
+    if common and elapsed > 0:
+        deltas = [(current[k][0] - previous[k][0], current[k][1] - previous[k][1]) for k in common]
+        if all(r >= 0 and w >= 0 for r, w in deltas):
+            result.update(readRate=sum(r for r, _ in deltas) / elapsed,
+                          writeRate=sum(w for _, w in deltas) / elapsed)
+    return result
+
+
 def sensors(root):
     result = []
     for hw in sorted(root.glob("class/hwmon/hwmon*")):
@@ -162,8 +193,14 @@ class Collector:
         self.previous = {}
         self.cpu_model = cpu_model(read(proc / "cpuinfo"))
         self.use_nvidia = use_nvidia
+        self.disk_previous = {}
+        self.disk_time = time.monotonic()
 
     def sample(self):
+        disk_now = time.monotonic()
+        counters = disk_counters(read(self.proc / "diskstats"), self.sys)
+        disk = disk_sample(counters, self.disk_previous, disk_now - self.disk_time)
+        self.disk_previous, self.disk_time = counters, disk_now
         ticks = cpu_ticks(read(self.proc / "stat"))
         loads = cpu_percent(ticks, self.previous)
         self.previous = ticks
@@ -177,7 +214,7 @@ class Collector:
         gpu = next((g for g in gpus if g["percent"] is not None), gpus[0] if gpus else {})
         return {"time": time.time(), "cpu": loads.get("cpu"), "cores": [loads[k] for k in sorted(loads, key=lambda k: int(k[3:] or -1)) if k != "cpu"],
                 "cpuModel": self.cpu_model, "cpuTemperature": max(cpu_temps) if cpu_temps else None,
-                "memory": memory(read(self.proc / "meminfo")), "gpu": gpu, "gpus": gpus, "palette": palette(),
+                "disk": disk, "memory": memory(read(self.proc / "meminfo")), "gpu": gpu, "gpus": gpus, "palette": palette(),
                 "error": "Cannot read /proc CPU or memory data" if not ticks or not read(self.proc / "meminfo") else ""}
 
 

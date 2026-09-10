@@ -58,7 +58,7 @@ Click the widget to open the detail panel, then choose **Settings**. Right-click
 
 The settings page has three tabs:
 
-- **Layout**: Overview (original stacked labels and charts), Compact (one line with charts), Minimal (numbers), or Custom. Select CPU/memory/GPU/temperature, reorder them, show or hide charts, choose stacked labels, and adjust custom chart width from 20–80 logical pixels. At least one metric stays enabled.
+- **Layout**: Overview (original stacked labels and charts), Compact (one line with charts), Minimal (numbers), or Custom. Select CPU/memory/GPU/temperature/disk, reorder them, show or hide charts, choose stacked labels, and adjust custom chart width from 20–80 logical pixels. At least one metric stays enabled.
 - **Detail panel**: System and Settings share a 440 × 558 logical-pixel content frame, constrained by available screen space. Overview shows history below each metric; Compact uses smaller rows without those history strips. Temperature history follows the history visibility setting.
 - **Monitoring**: choose 1, 2, or 5 second sampling; configure startup; pause/resume; exit this session; or disable the plugin entirely.
 - **Updates**: inspect the installed version, check for a new Git commit, update in a terminal, and reload Omarchy Shell afterward.
@@ -108,6 +108,8 @@ One shared Python collector serves every monitor and emits JSON at the configure
 On multiple GPUs, the first adapter with utilization telemetry is displayed (otherwise the first detected adapter). Full adapter data is included in collector JSON. Unsupported metrics show `—`, never a fabricated zero. Sensor availability and permissions vary by driver. No root access or sensor probing commands are required. NVIDIA queries may wake a sleeping discrete GPU.
 
 If an enabled collector exits it is retried; missing updates dim the bar and mark the detail panel offline. History is in memory only and resets on restart. The settings screen and missing metrics remain usable without supported GPU sensors.
+
+Disk capacity describes the root filesystem (`/`). Read/write rates aggregate whole hardware block devices exposed by `/sys/block/*/device`, excluding partitions and virtual mapper layers to avoid double counting. The first sample has no rate. Enable **Disk /** in Settings to add its capacity meter to the horizontal bar; it is off by default. The detail panel always includes disk information and scrolls within its fixed frame.
 
 ## Development and verification
 

@@ -6,7 +6,7 @@ import "History.js" as History
 
 QtObject {
     id: root
-    property var sample: ({memory: {}, gpu: {}, cores: [], palette: {}})
+    property var sample: ({memory: {}, disk: {}, gpu: {}, cores: [], palette: {}})
     property var points: []
     property var history: History.empty()
     property double lastUpdate: 0
@@ -67,6 +67,7 @@ QtObject {
     function percent(value) { return Number.isFinite(value) ? Math.round(value) + "%" : "—" }
     function temp(value) { return Number.isFinite(value) ? Math.round(value) + "°C" : "—" }
     function gib(value) { return Number.isFinite(value) ? (value / 1073741824).toFixed(1) : "—" }
+    function rate(value) { return Number.isFinite(value) ? (value / 1048576).toFixed(1) + " MiB/s" : "—" }
     function palette(name, ansi, fallback) { return sample.palette[name] || sample.palette[ansi] || fallback }
     property Process collector: Process {
         command: ["python3", decodeURIComponent(Qt.resolvedUrl("collector.py").toString().replace(/^file:\/\//, "")), "--interval", String(root.intervalSeconds)]
