@@ -13,6 +13,28 @@ Panel {
     property string settingsError: ""
     readonly property bool vertical: bar ? bar.vertical : false
     readonly property var preferences: Layout.normalize(settings)
+    readonly property var hostWindow: QsWindow.window
+    property real availableWidth: Layout.availableWidth(root, hostWindow ? hostWindow.contentItem : null, Style.space(12))
+    readonly property bool fittedGraphs: preferences.graphs && fullWidth <= availableWidth
+    readonly property var metricIds: preferences.metrics.reduce((ids, id) => ids.concat(id === "heat" ? ["cpuHeat", "gpuHeat"] : [id]), [])
+    readonly property real fullWidth: measuredWidth(metricIds.length, preferences.graphs)
+    readonly property int fittedCount: {
+        for (let count = metricIds.length; count > 0; count--)
+            if (measuredWidth(count, fittedGraphs) <= availableWidth) return count
+        return 0
+    }
+    function measuredWidth(count, graphs) {
+        let result = Style.space(12) + Math.max(0, count - 1) * Style.space(12)
+        for (let i = 0; i < count; i++) {
+            const metric = metrics[metricIds[i]]
+            const text = (preferences.stacked ? "" : metric.name + " ") + metric.value
+            const labelWidth = Math.ceil(Math.max(bodyMetrics.advanceWidth(text), preferences.stacked ? captionMetrics.advanceWidth(metric.name) : 0))
+            result += labelWidth + (graphs ? Style.space(5 + preferences.chartWidth) : 0)
+        }
+        return result
+    }
+    FontMetrics { id: bodyMetrics; font.family: Style.font.family; font.pixelSize: Style.font.body }
+    FontMetrics { id: captionMetrics; font.family: Style.font.family; font.pixelSize: Style.font.caption }
     readonly property color cpuColor: Metrics.palette("green", "color2", Color.accent)
     readonly property color memoryColor: Metrics.palette("magenta", "color5", Color.accent)
     readonly property color gpuColor: Metrics.palette("blue", "color4", Color.accent)
@@ -26,7 +48,7 @@ Panel {
         cpuHeat: {name: "CPU", value: Metrics.temp(s.cpuTemperature), ink: heatColor},
         gpuHeat: {name: "GPU", value: Metrics.temp(s.gpu.temperature), ink: heatColor}
     })
-    implicitWidth: vertical ? Style.bar.sizeVertical : !Metrics.sessionEnabled ? Style.space(42) : line.implicitWidth + Style.space(12)
+    implicitWidth: vertical ? Style.bar.sizeVertical : !Metrics.sessionEnabled || fittedCount === 0 ? Math.min(availableWidth, Style.space(42)) : Math.min(availableWidth, measuredWidth(fittedCount, fittedGraphs))
     implicitHeight: vertical ? Style.space(Metrics.sessionEnabled ? 62 : 30) : (bar ? bar.barSize : Style.bar.sizeHorizontal)
     Component.onCompleted: { Metrics.attach(settings); attached = true }
     Component.onDestruction: if (attached) Metrics.detach()
@@ -42,6 +64,7 @@ Panel {
     WidgetButton {
         id: button
         anchors.fill: parent
+        clip: true
         bar: root.bar
         text: "Omarchy Statusline"
         labelVisible: false
@@ -53,15 +76,15 @@ Panel {
             color: root.opened || button.tooltipHovered ? Qt.alpha(Color.foreground, 0.07) : "transparent"
             border.color: root.opened ? Qt.alpha(Color.accent, 0.4) : "transparent"
         }
-        PulseText { visible: !Metrics.sessionEnabled; anchors.centerIn: parent; text: "◌"; color: root.barForeground }
+        PulseText { visible: !Metrics.sessionEnabled || (!root.vertical && root.fittedCount === 0); anchors.centerIn: parent; text: "◌"; color: root.barForeground }
         Row {
             id: line
             anchors.centerIn: parent
             spacing: Style.space(12)
-            visible: !root.vertical && Metrics.sessionEnabled
+            visible: !root.vertical && Metrics.sessionEnabled && root.fittedCount > 0
             opacity: Metrics.stale ? 0.4 : 1
             Repeater {
-                model: root.preferences.metrics.reduce((ids, id) => ids.concat(id === "heat" ? ["cpuHeat", "gpuHeat"] : [id]), [])
+                model: root.metricIds.slice(0, root.fittedCount)
                 Row {
                     required property string modelData
                     readonly property var metric: root.metrics[modelData]
@@ -75,7 +98,7 @@ Panel {
                         width: Style.space(root.preferences.chartWidth)
                         height: Style.space(root.preferences.stacked ? 22 : 14)
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: root.preferences.graphs
+                        visible: root.fittedGraphs
                         CoreBars { anchors.fill: parent; visible: modelData === "cpu"; values: root.s.cores; ink: root.cpuColor; spacing: 1 }
                         Meter { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: Style.space(6); visible: modelData === "memory" || modelData === "disk"; value: modelData === "disk" ? (root.s.disk || {}).percent : root.s.memory.percent; ink: metric.ink }
                         Sparkline { anchors.fill: parent; visible: modelData === "gpu" || modelData === "cpuHeat" || modelData === "gpuHeat"; values: modelData === "gpu" ? Metrics.history.gpu : (modelData === "gpuHeat" ? Metrics.history.gpuTemp : Metrics.history.cpuTemp); ink: metric.ink }

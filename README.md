@@ -65,7 +65,7 @@ The settings page has three tabs:
 - **Monitoring**: choose 1, 2, or 5 second sampling; configure startup; pause/resume; exit this session; or disable the plugin entirely.
 - **Updates**: inspect the installed version, check for a new Git commit, update in a terminal, and reload Omarchy Shell afterward.
 
-Bar width follows its actual contents. The plugin fits the host bar and never creates another bar. Left/right vertical bars use the CPU/memory readout and the same settings and detail panel.
+Bar width adapts independently to the space available on each monitor, reserving room for the clock and neighboring widgets. On narrow screens it hides charts first, then shows only the metrics that fit in your chosen order; click for all details. If necessary it collapses to a small launcher. The full layout returns when space is available, without changing saved settings. The plugin fits the host bar and never creates another bar. Left/right vertical bars use the CPU/memory readout and the same settings and detail panel.
 
 ```bash
 omarchy bar set lucas.system-pulse layout compact
