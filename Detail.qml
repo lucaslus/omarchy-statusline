@@ -53,8 +53,6 @@ FocusScope {
         RowLayout {
             Layout.fillWidth: true
             PulseText { text: root.showSettings ? "Settings" : "System"; font.pixelSize: Style.font.heading; Layout.fillWidth: true }
-            Rectangle { visible: !root.showSettings; width: 5; height: 5; radius: 3; color: Metrics.stale ? Color.urgent : root.cpuColor }
-            PulseText { visible: !root.showSettings; text: Metrics.stateLabel; opacity: 0.65; font.pixelSize: Style.font.caption }
             Action { label: "×"; onTriggered: root.closeRequested() }
         }
         Separator {}

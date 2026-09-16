@@ -18,7 +18,6 @@ QtObject {
     property bool sessionEnabled: false
     property int intervalSeconds: 2
     readonly property bool shouldRun: consumers > 0 && sessionEnabled
-    readonly property string stateLabel: !sessionEnabled ? "PAUSED" : stale ? "OFFLINE" : "LIVE · " + intervalSeconds + "s"
     function attach(options) {
         if (!initialized) {
             sessionEnabled = options.autoStart !== false
