@@ -22,6 +22,14 @@ omarchy plugin add https://github.com/lucaslus/omarchy-statusline.git --enable -
 
 [Latest release](https://github.com/lucaslus/omarchy-statusline/releases/latest) · [CI checks](https://github.com/lucaslus/omarchy-statusline/actions)
 
+To remove a normal installation, run:
+
+```bash
+omarchy plugin remove lucas.system-pulse
+```
+
+Omarchy asks for confirmation, unloads the plugin if enabled, and removes its installed checkout. For a development installation, use the checkout-specific uninstall script below.
+
 ## Requirements
 
 - Linux with the **Quickshell-based Omarchy Shell**, including third-party plugins and `qs.Ui.KeyboardPanel`. Legacy Waybar-based Omarchy is not supported.
