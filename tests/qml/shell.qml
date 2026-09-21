@@ -87,6 +87,11 @@ ShellRoot {
                 barFixture.width = 2194
                 app.check(scroll.contentY === 0, "settings resets scroll")
                 app.check(scroll.contentHeight === page.implicitHeight, "settings uses its own scroll height")
+                page.category = "updates"
+                app.check(page.installedVersion.length > 0, "settings reads installed version without updater process")
+                const updateGuide = app.find(page, "pulseUpdateInstructions")
+                app.check(updateGuide && updateGuide.visible && updateGuide.text.indexOf("omarchy plugin update lucas.system-pulse") >= 0, "updates page directs users to host plugin manager")
+                page.category = "layout"
                 page.change("layout", "minimal")
                 app.check(detail.settings.layout === 'minimal', "settings emits persistable values")
                 page.change("detailLayout", "compact")

@@ -12,9 +12,8 @@ ColumnLayout {
     property var settings: ({})
     property string category: "layout"
     property string saveError: ""
-    property var updateStatus: ({message: "Not checked yet.", canUpdate: false})
+    readonly property string installedVersion: manifestData.version
     readonly property var preferences: LayoutModel.normalize(settings)
-    readonly property string helper: decodeURIComponent(Qt.resolvedUrl("maintenance.py").toString().replace(/^file:\/\//, ""))
     signal saveRequested(var values)
     signal closeRequested()
     spacing: Style.space(8)
@@ -33,15 +32,11 @@ ColumnLayout {
         const other = ids[next]; ids[next] = id; ids[i] = other
         change("metrics", ids)
     }
-    function checkUpdates(action) { if (!updater.running) { updater.command = ["python3", helper, action]; updater.running = true } }
-    Component.onCompleted: checkUpdates("status")
-    Process {
-        id: updater
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try { root.updateStatus = JSON.parse(text) }
-                catch(e) { root.updateStatus = {canUpdate: false, message: "Could not read update status."} }
-            }
+    FileView {
+        path: decodeURIComponent(Qt.resolvedUrl("manifest.json").toString().replace(/^file:\/\//, ""))
+        JsonAdapter {
+            id: manifestData
+            property string version: ""
         }
     }
     component Title: PulseText { font.pixelSize: Style.font.bodySmall; opacity: 0.6; Layout.fillWidth: true; Layout.topMargin: Style.space(6) }
@@ -219,14 +214,18 @@ ColumnLayout {
         visible: root.category === "updates"
         Layout.fillWidth: true
         spacing: Style.space(8)
-    Title { text: "Version " + (root.updateStatus.version || "0.2.1") }
-    Hint { text: root.updateStatus.message }
+    Title { text: root.installedVersion ? "Version " + root.installedVersion : "Omarchy Statusline" }
+    Hint { text: "Manage updates through Omarchy’s plugin manager." }
+    Hint {
+        objectName: "pulseUpdateInstructions"
+        text: "For a normal installation, run in a terminal:\nomarchy plugin update lucas.system-pulse"
+    }
+    Hint { text: "Development installations: update your source checkout manually. Reload Omarchy Shell after updating; this restarts the whole shell." }
     Flow {
         Layout.fillWidth: true; spacing: Style.space(7)
-        Button { iconText: "↻"; text: updater.running ? "Checking…" : "Check for updates"; enabled: !updater.running; onClicked: root.checkUpdates("check") }
         Button {
-            iconText: "↓"; text: "Update"; tooltipText: "Install update in terminal"; enabled: root.updateStatus.canUpdate === true && !updater.running
-            onClicked: Quickshell.execDetached(["omarchy", "launch", "terminal", "python3", root.helper, "apply", root.updateStatus.target])
+            iconText: "↗"; text: "Plugin marketplace"
+            onClicked: Qt.openUrlExternally("https://plugins.omarchy.org/")
         }
         Button { iconText: "↻"; text: "Reload shell"; tooltipText: "Restart Omarchy Shell to apply updates"; onClicked: Quickshell.execDetached(["omarchy", "restart", "shell"]) }
     }

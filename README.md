@@ -71,7 +71,7 @@ The settings page has three tabs:
 - **Layout**: Overview (original stacked labels and charts), Compact (one line with charts), Minimal (numbers), or Custom. Select CPU/memory/GPU/temperature/disk, reorder them, show or hide charts, choose stacked labels, and adjust custom chart width from 20–80 logical pixels. At least one metric stays enabled.
 - **Detail panel**: System and Settings share a 440 × 558 logical-pixel content frame, constrained by available screen space. Overview shows history below each metric; Compact uses smaller rows without those history strips. Temperature history follows the history visibility setting.
 - **Monitoring**: choose 1, 2, or 5 second sampling; configure startup; pause/resume; exit this session; or disable the plugin entirely.
-- **Updates**: inspect the installed version, check for a new Git commit, update in a terminal, and reload Omarchy Shell afterward.
+- **Updates**: inspect the installed version, find Omarchy’s plugin update command, open the marketplace, and reload Omarchy Shell afterward.
 
 Bar width adapts independently to the space available on each monitor, reserving room for the clock and neighboring widgets. On narrow screens it hides charts first, then shows only the metrics that fit in your chosen order; click for all details. If necessary it collapses to a small launcher. The full layout returns when space is available, without changing saved settings. The plugin fits the host bar and never creates another bar. Left/right vertical bars use the CPU/memory readout and the same settings and detail panel.
 
@@ -96,9 +96,15 @@ The collector runs only while at least one widget consumes it and the session is
 
 ## Updating
 
-Updates follow the installed Git repository’s `origin` default branch; checks are manual and fetch metadata without changing checked-out files. **Update in terminal** fast-forwards to the exact commit offered by the last check, after validating its plugin manifest and entry point. Reload Omarchy Shell afterward to clear cached QML components; this reload affects the whole shell.
+Use Omarchy’s plugin manager for a normal Git-managed installation:
 
-Development symlinks, linked worktrees, uncommitted repositories and installations with local changes are not automatically updated. The update helper never stashes or resets user changes, never performs a non-fast-forward merge, and refuses to overwrite ignored local files. Updates track the default branch, rather than release tags. Development installations should be updated through their source checkout.
+```bash
+omarchy plugin update lucas.system-pulse
+```
+
+Follow the host command’s prompts. **Settings → Updates** displays this command and links to the plugin marketplace. The plugin itself does not check remote repositories, download updates or apply Git changes. Update behavior and confirmation are managed by the installed Omarchy version.
+
+After updating, use **Reload shell** or `omarchy restart shell` to clear cached QML components; this restarts the whole shell. Development symlinks and worktrees should be updated manually through their source checkout.
 
 ## Themes
 
@@ -130,9 +136,9 @@ bash -n scripts/install.sh scripts/uninstall.sh
 python3 scripts/test-qml.py
 ```
 
-The Python tests cover telemetry, asynchronous installation registration, and updates against local Git fixtures (including dirty/development checkouts, manifest validation and ignored-file protection). The native QML tests run in a temporary, windowless Quickshell instance and cover timestamp expiry, settings persistence signals and scrolling, layouts, multi-monitor lifecycle, startup preferences and pause/resume. Native tests require an Omarchy desktop session; the GitHub CI job runs the Python and shell checks. AMD telemetry and native shell integration were exercised on the development machine. NVIDIA parsing is fixture-tested, not verified on physical NVIDIA hardware.
+The Python tests cover telemetry and asynchronous installation registration. The native QML tests run in a temporary, windowless Quickshell instance and cover timestamp expiry, settings persistence signals and scrolling, local version display and host update guidance, layouts, multi-monitor lifecycle, startup preferences and pause/resume. Native tests require an Omarchy desktop session; the GitHub CI job runs the Python and shell checks. AMD telemetry and native shell integration were exercised on the development machine. NVIDIA parsing is fixture-tested, not verified on physical NVIDIA hardware.
 
-Files: `Widget.qml` is the bar entry point, `Detail.qml` is the popup, `SettingsPage.qml` contains the settings, `Metrics.qml` manages sampling consumers, `History.js` manages the timeline, `collector.py` reads hardware data, `maintenance.py` handles updates, and the small QML components render the charts.
+Files: `Widget.qml` is the bar entry point, `Detail.qml` is the popup, `SettingsPage.qml` contains the settings, `Metrics.qml` manages sampling consumers, `History.js` manages the timeline, `collector.py` reads hardware data, and the small QML components render the charts.
 
 ## Releases
 
