@@ -4,15 +4,29 @@
 
 A native **Omarchy Shell system monitor** built with Quickshell/QML and Python. Live CPU, GPU, memory and temperature graphs fit directly into your Linux status bar and follow your Omarchy theme.
 
-The default widget shows CPU load with per-core bars, memory usage with a meter, GPU utilization with a sparkline, and separate CPU/GPU temperatures with sparklines. Click it for the system detail panel with 60-second history, VRAM, power, fan speed, CPU/GPU/hotspot temperatures. Escape, the close button, or a click outside dismisses the panel.
+The default widget shows CPU load with per-core bars, memory usage with a meter, each detected GPU's utilization, and separate CPU and per-GPU temperatures. Click it for the system detail panel with 60-second history, VRAM, power, fan speed, CPU/GPU/hotspot temperatures for every detected GPU. Escape, the close button, or a click outside dismisses the panel.
 
 ## Screenshots
 
-![Omarchy status bar with CPU, memory, GPU and separate CPU/GPU temperature graphs](docs/images/status-bar.png)
+These screenshots are examples of the same widget layout under two Omarchy themes.
+
+### Example: Hackerman
+
+![Omarchy status bar showing CPU, memory, GPU1 and GPU2 utilization, separate CPU and GPU temperatures, and disk usage](docs/images/themes/hackerman/status-bar.png)
 
 | System monitor | Settings |
 | --- | --- |
-| ![System panel showing CPU and GPU models, utilization, VRAM and temperatures](docs/images/system-panel.png) | ![Settings with custom layouts, charts, metric ordering and monitoring controls](docs/images/settings.png) |
+| ![System panel showing separate utilization, VRAM, temperature and hotspot readings for two GPUs](docs/images/themes/hackerman/system-panel.png) | ![Settings listing both GPUs with separate utilization and temperature switches](docs/images/themes/hackerman/settings.png) |
+
+### Example: Ristretto
+
+![Omarchy status bar in the Ristretto theme showing both GPUs and their temperatures](docs/images/themes/ristretto/status-bar.png)
+
+| System monitor | Settings |
+| --- | --- |
+| ![Ristretto system panel showing separate readings for two GPUs](docs/images/themes/ristretto/system-panel.png) | ![Ristretto settings listing both GPUs with separate switches](docs/images/themes/ristretto/settings.png) |
+
+Omarchy Statusline follows whichever Omarchy theme is active; Hackerman and Ristretto are examples, not the only supported themes. No plugin theme setting is needed.
 
 ## Quick install
 
@@ -66,19 +80,18 @@ omarchy plugin add https://github.com/lucaslus/omarchy-statusline.git --enable -
 
 Click the widget to open the detail panel, then choose **Settings**. Right-click opens Settings directly. Settings are saved in the widget’s existing `shell.json` entry and shared by all monitors.
 
-The settings page has three tabs:
+The settings page has three tabs, with detail panel options inside Layout:
 
-- **Layout**: Overview (original stacked labels and charts), Compact (one line with charts), Minimal (numbers), or Custom. Select CPU/memory/GPU/temperature/disk, reorder them, show or hide charts, choose stacked labels, and adjust custom chart width from 20–80 logical pixels. At least one metric stays enabled.
-- **Detail panel**: System and Settings share a 440 × 558 logical-pixel content frame, constrained by available screen space. Overview shows history below each metric; Compact uses smaller rows without those history strips. Temperature history follows the history visibility setting.
+- **Layout**: Default (the initial setup, with adjustable charts and labels), Overview (stacked labels and charts), or Minimal (short labels and no charts). Select and reorder CPU/memory/GPU/temperature/disk groups, then control each detected GPU's utilization and temperature readouts separately. In Default, you can show or hide charts, choose stacked labels, and adjust chart width from 20–80 logical pixels. At least one metric group stays enabled. Existing `custom` and `compact` bar settings load as Default.
+- **Detail panel (Layout)**: System and Settings share a 440 × 558 logical-pixel content frame, constrained by available screen space. Overview shows history below each metric; Compact uses smaller rows without those history strips. Temperature history follows the history visibility setting.
 - **Monitoring**: choose 1, 2, or 5 second sampling; configure startup; pause/resume; exit this session; or disable the plugin entirely.
 - **Updates**: inspect the installed version, find Omarchy’s plugin update command, open the marketplace, and reload Omarchy Shell afterward.
 
 Bar width adapts independently to the space available on each monitor, reserving room for the clock and neighboring widgets. On narrow screens it hides charts first, then shows only the metrics that fit in your chosen order; click for all details. If necessary it collapses to a small launcher. The full layout returns when space is available, without changing saved settings. The plugin fits the host bar and never creates another bar. Left/right vertical bars use the CPU/memory readout and the same settings and detail panel.
 
 ```bash
-omarchy bar set lucas.system-pulse layout compact
+omarchy bar set lucas.system-pulse layout default
 omarchy bar set lucas.system-pulse detailLayout compact
-omarchy bar set lucas.system-pulse metrics '["cpu","memory","gpu","heat"]' --json
 omarchy bar move lucas.system-pulse --before omarchy.network
 omarchy-shell shell summon lucas.system-pulse '{}'
 omarchy-shell shell hide lucas.system-pulse
@@ -108,7 +121,7 @@ After updating, use **Reload shell** or `omarchy restart shell` to clear cached 
 
 ## Themes
 
-Panel surfaces, text, borders, fonts, spacing, and rounding use Omarchy's shared `Color`, `Style`, and native popup components. Metric colors use the current theme's green, magenta, blue, and yellow (ANSI `color2/5/4/3` fallback), then the shell accent. The current palette is reread on each sample, including after theme directory/symlink replacement. Both named-color and ANSI palettes work; no theme files or hooks are modified.
+The plugin has no separate theme selector: switching the Omarchy theme updates its panel surfaces, text, borders, and metric charts to match. Fonts, spacing, and rounding use Omarchy's shared `Color`, `Style`, and native popup components. Metric colors use the current theme's green, magenta, blue, and yellow (ANSI `color2/5/4/3` fallback), then the shell accent. The current palette is reread on each sample, including after theme directory/symlink replacement. Both named-color and ANSI palettes work; no theme files or hooks are modified.
 
 ## Telemetry and limitations
 
@@ -121,7 +134,7 @@ One shared Python collector serves every monitor and emits JSON at the configure
 | NVIDIA GPU | Optional `nvidia-smi`, bounded to a 1.2-second timeout; utilization, VRAM, temperature, power |
 | Intel / other GPU | Adapter detection; only metrics actually exported through the supported sysfs files |
 
-On multiple GPUs, the first adapter with utilization telemetry is displayed (otherwise the first detected adapter). Full adapter data is included in collector JSON. Unsupported metrics show `—`, never a fabricated zero. Sensor availability and permissions vary by driver. No root access or sensor probing commands are required. NVIDIA queries may wake a sleeping discrete GPU.
+On multiple GPUs, the status bar labels each detected adapter GPU1, GPU2, and so on, with separate utilization and temperature readouts. Settings lists each adapter by name and saves its bar switches by adapter ID. The detail panel lists every detected GPU with its own utilization, VRAM, power, fan, temperature, hotspot, and history where available. Full adapter data is included in collector JSON. Unsupported metrics show `—`, never a fabricated zero. Sensor availability and permissions vary by driver. No root access or sensor probing commands are required. NVIDIA queries may wake a sleeping discrete GPU.
 
 If an enabled collector exits it is retried; missing updates dim the bar and mark the detail panel offline. History is in memory only and resets on restart. The settings screen and missing metrics remain usable without supported GPU sensors.
 
@@ -140,9 +153,13 @@ The Python tests cover telemetry and asynchronous installation registration. The
 
 Files: `Widget.qml` is the bar entry point, `Detail.qml` is the popup, `SettingsPage.qml` contains the settings, `Metrics.qml` manages sampling consumers, `History.js` manages the timeline, `collector.py` reads hardware data, and the small QML components render the charts.
 
-## Releases
+## Releases and marketplace updates
 
-Set the version in `manifest.json`, update `RELEASE_NOTES.md`, commit and push, then push a matching `vX.Y.Z` tag. GitHub Actions checks the version, runs Python tests and shell validation, and publishes a source archive with SHA-256 checksums. A failed validation prevents publication.
+Set the version in `manifest.json`, update `RELEASE_NOTES.md` and the preview if needed, validate the plugin, then commit and push the new code to the public repository. A matching `vX.Y.Z` tag triggers this repository's GitHub Release workflow, which runs Python tests and shell validation before publishing a source archive with SHA-256 checksums. The GitHub Release is separate from the Omarchy Plugin Marketplace listing.
+
+For this already listed plugin, use the Marketplace's [verification and update form](https://github.com/omacom/omarchy-plugin-marketplace/issues/new?template=verify-plugin.yml) with **Verify and publish a newer upstream commit**. Enter `lucas.system-pulse`, the [repository root URL](https://github.com/lucaslus/omarchy-statusline), and the full 40-character SHA of the pushed default-branch HEAD. The Marketplace validates that exact commit and updates the listing after its review and publication workflow succeeds; pushing or tagging alone does not publish a new verified snapshot. See the [official verification guide](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/VERIFICATION.md).
+
+Users with a normal Git-managed installation can then run `omarchy plugin update lucas.system-pulse`. A development symlink uses its local checkout instead. Omarchy's update command follows the repository's current HEAD, so the installed commit is not pinned to the Marketplace's verified snapshot.
 
 ## License
 

@@ -23,6 +23,13 @@ FocusScope {
     signal closeRequested()
     readonly property var s: Metrics.sample
     readonly property var disk: s.disk || ({})
+    readonly property var gpus: Array.isArray(s.gpus) ? s.gpus : (s.gpu && s.gpu.id ? [s.gpu] : [])
+    readonly property var gpuRows: gpus.length ? gpus.map((gpu, index) => ({
+        label: "GPU " + (index + 1) + (gpu.name ? " · " + gpu.name : ""),
+        icon: "gpu", value: Metrics.percent(gpu.percent), sub: "Temp " + Metrics.temp(gpu.temperature),
+        ink: root.gpuColor, history: (Metrics.history.gpus[gpu.id] || {}).load || [], type: "gpu", gpu: gpu
+    })) : [{label: "GPU · unavailable", icon: "gpu", value: "—", sub: "—",
+                ink: root.gpuColor, history: [], type: "gpu", gpu: ({})}]
     readonly property color diskColor: Metrics.palette("cyan", "color6", Color.accent)
     Keys.onEscapePressed: { if (showSettings) showSettings = false; else closeRequested() }
 
@@ -79,12 +86,12 @@ FocusScope {
                 opacity: Metrics.stale ? 0.5 : 1
                 Repeater {
                     model: [
-                        {label: "CPU" + (root.s.cpuModel ? " · " + root.s.cpuModel : ""), icon: "cpu", value: Metrics.percent(root.s.cpu), sub: Metrics.temp(root.s.cpuTemperature), ink: root.cpuColor, history: Metrics.history.cpu, type: "cpu"},
-                        {label: "Memory", icon: "memory", value: Metrics.percent(root.s.memory.percent), sub: Metrics.gib(root.s.memory.used) + " / " + Metrics.gib(root.s.memory.total) + " GiB", ink: root.memoryColor, history: Metrics.history.memory, type: "memory"},
-                        {label: "GPU" + (root.s.gpu.name ? " · " + root.s.gpu.name : " · unavailable"), icon: "gpu", value: Metrics.percent(root.s.gpu.percent), sub: Metrics.temp(root.s.gpu.temperature), ink: root.gpuColor, history: Metrics.history.gpu, type: "gpu"}
-                    ]
+                        {label: "CPU" + (root.s.cpuModel ? " · " + root.s.cpuModel : ""), icon: "cpu", value: Metrics.percent(root.s.cpu), sub: "Temp " + Metrics.temp(root.s.cpuTemperature), ink: root.cpuColor, history: Metrics.history.cpu, type: "cpu", gpu: {}},
+                        {label: "Memory", icon: "memory", value: Metrics.percent(root.s.memory.percent), sub: Metrics.gib(root.s.memory.used) + " / " + Metrics.gib(root.s.memory.total) + " GiB", ink: root.memoryColor, history: Metrics.history.memory, type: "memory", gpu: {}}
+                    ].concat(root.gpuRows)
                     ColumnLayout {
                         required property var modelData
+                        objectName: modelData.type === "gpu" ? "pulseGpuDetail-" + modelData.gpu.id : ""
                         Layout.fillWidth: true
                         spacing: Style.space(8)
                         PulseText {
@@ -104,17 +111,24 @@ FocusScope {
                                 Layout.preferredWidth: Style.space(140)
                                 Layout.minimumWidth: Style.space(85)
                                 PulseText { text: modelData.value; color: modelData.ink; font.pixelSize: root.compactDetails ? Style.font.heading : Style.font.display }
-                                PulseText { text: modelData.sub; color: modelData.type === "memory" ? Color.popups.text : root.heatColor; font.pixelSize: Style.font.bodySmall; Layout.fillWidth: true }
+                                PulseText { text: modelData.sub; color: modelData.type === "memory" ? Color.popups.text : ((modelData.type === "cpu" && root.s.cpuTemperature >= 85) || (modelData.type === "gpu" && modelData.gpu.temperature >= 85)) ? Color.urgent : root.heatColor; font.pixelSize: Style.font.bodySmall; Layout.fillWidth: true }
+                                PulseText {
+                                    visible: modelData.type === "gpu"
+                                    text: "Hotspot " + Metrics.temp(modelData.gpu.hotspot)
+                                    color: modelData.gpu.hotspot >= 85 ? Color.urgent : root.heatColor
+                                    font.pixelSize: Style.font.bodySmall
+                                    Layout.fillWidth: true
+                                }
                             }
                             ColumnLayout {
                                 Layout.preferredWidth: Style.space(160)
                                 Layout.fillWidth: true
                                 CoreBars { visible: modelData.type === "cpu"; Layout.fillWidth: true; Layout.preferredHeight: Style.space(root.compactDetails ? 28 : 36); values: root.s.cores; ink: root.cpuColor; spacing: 2 }
-                                PulseText { visible: modelData.type === "gpu"; text: "VRAM " + Metrics.gib(root.s.gpu.used) + " / " + Metrics.gib(root.s.gpu.total) + " GiB"; Layout.fillWidth: true; font.pixelSize: Style.font.bodySmall }
-                                Meter { visible: modelData.type !== "cpu"; Layout.fillWidth: true; Layout.preferredHeight: Style.space(10); value: modelData.type === "memory" ? root.s.memory.percent : (root.s.gpu.total ? 100 * root.s.gpu.used / root.s.gpu.total : null); ink: modelData.ink }
+                                PulseText { visible: modelData.type === "gpu"; text: "VRAM " + Metrics.gib(modelData.gpu.used) + " / " + Metrics.gib(modelData.gpu.total) + " GiB"; Layout.fillWidth: true; font.pixelSize: Style.font.bodySmall }
+                                Meter { visible: modelData.type !== "cpu"; Layout.fillWidth: true; Layout.preferredHeight: Style.space(10); value: modelData.type === "memory" ? root.s.memory.percent : (modelData.gpu.total && modelData.gpu.used != null ? 100 * modelData.gpu.used / modelData.gpu.total : null); ink: modelData.ink }
                                 PulseText {
                                     Layout.fillWidth: true; font.pixelSize: Style.font.caption; opacity: 0.65
-                                    text: modelData.type === "cpu" ? root.s.cores.length + " cores" : modelData.type === "memory" ? "Available " + Metrics.gib(root.s.memory.total == null || root.s.memory.used == null ? null : root.s.memory.total - root.s.memory.used) + " GiB" : (root.s.gpu.power == null ? "—" : Math.round(root.s.gpu.power)) + " W · " + (root.s.gpu.fan == null ? "—" : Math.round(root.s.gpu.fan)) + " RPM"
+                                    text: modelData.type === "cpu" ? root.s.cores.length + " cores" : modelData.type === "memory" ? "Available " + Metrics.gib(root.s.memory.total == null || root.s.memory.used == null ? null : root.s.memory.total - root.s.memory.used) + " GiB" : (modelData.gpu.power == null ? "—" : Math.round(modelData.gpu.power)) + " W · " + (modelData.gpu.fan == null ? "—" : Math.round(modelData.gpu.fan)) + " RPM"
                                 }
                             }
                         }
@@ -141,22 +155,6 @@ FocusScope {
                     font.pixelSize: Style.font.bodySmall
                     Layout.fillWidth: true
                     opacity: 0.7
-                }
-                Separator {}
-                PulseText { text: "Temperatures"; font.pixelSize: Style.font.bodySmall }
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: Style.space(28)
-                    Repeater {
-                        model: [{label: "CPU", value: root.s.cpuTemperature, history: Metrics.history.cpuTemp}, {label: "GPU", value: root.s.gpu.temperature, history: Metrics.history.gpuTemp}, {label: "HOTSPOT", value: root.s.gpu.hotspot, history: Metrics.history.hotspot}]
-                        ColumnLayout {
-                            required property var modelData
-                            Layout.fillWidth: true
-                            PulseText { text: modelData.label; opacity: 0.65; font.pixelSize: Style.font.caption }
-                            PulseText { text: Metrics.temp(modelData.value); color: modelData.value >= 85 ? Color.urgent : root.heatColor; font.pixelSize: Style.font.heading }
-                            Sparkline { visible: root.showHistory; Layout.fillWidth: true; Layout.preferredHeight: Style.space(root.compactDetails ? 16 : 20); values: modelData.history; ink: root.heatColor; ceiling: 110 }
-                        }
-                    }
                 }
             }
             SettingsPage {

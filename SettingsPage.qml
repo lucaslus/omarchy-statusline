@@ -14,6 +14,7 @@ ColumnLayout {
     property string saveError: ""
     readonly property string installedVersion: manifestData.version
     readonly property var preferences: LayoutModel.normalize(settings)
+    readonly property var gpus: LayoutModel.adapters(Metrics.sample)
     signal saveRequested(var values)
     signal closeRequested()
     spacing: Style.space(8)
@@ -31,6 +32,11 @@ ColumnLayout {
         if (i < 0 || next < 0 || next >= ids.length) return
         const other = ids[next]; ids[next] = id; ids[i] = other
         change("metrics", ids)
+    }
+    function toggleGpu(key, id) {
+        const current = Object.assign({}, settings[key] || {})
+        current[id] = current[id] === false
+        change(key, current)
     }
     FileView {
         path: decodeURIComponent(Qt.resolvedUrl("manifest.json").toString().replace(/^file:\/\//, ""))
@@ -52,8 +58,9 @@ ColumnLayout {
         id: toggle
         property string label: ""
         property bool checked: false
+        property bool showLabel: true
         signal clicked()
-        implicitWidth: Style.space(160)
+        implicitWidth: Style.space(showLabel ? 160 : 38)
         implicitHeight: Style.space(32)
         radius: Style.cornerRadius
         color: activeFocus || hit.containsMouse ? Qt.alpha(Color.accent, 0.10) : "transparent"
@@ -68,6 +75,7 @@ ColumnLayout {
         Keys.onSpacePressed: clicked()
         Keys.onReturnPressed: clicked()
         PulseText {
+            visible: toggle.showLabel
             anchors.left: parent.left
             anchors.leftMargin: Style.space(6)
             anchors.right: track.left
@@ -117,7 +125,7 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: Style.space(7)
         Repeater {
-            model: [{id: "overview", label: "Overview", icon: "▦"}, {id: "compact", label: "Compact", icon: "☰"}, {id: "minimal", label: "Minimal", icon: "−"}, {id: "custom", label: "Custom", icon: "⚙"}]
+            model: [{id: "default", label: "Default", icon: "⚙"}, {id: "overview", label: "Overview", icon: "▦"}, {id: "minimal", label: "Minimal", icon: "−"}]
             Button {
                 required property var modelData
                 text: modelData.label
@@ -128,13 +136,13 @@ ColumnLayout {
         }
     }
     RowLayout {
-        visible: root.preferences.layout === "custom"
+        visible: root.preferences.layout === "default"
         Layout.fillWidth: true
         Toggle { Layout.fillWidth: true; label: "⌁  Charts"; checked: root.preferences.graphs; onClicked: root.change("showGraphs", !checked) }
         Toggle { Layout.fillWidth: true; label: "☷  Stacked labels"; checked: root.preferences.stacked; onClicked: root.change("stackedLabels", !checked) }
     }
     RowLayout {
-        visible: root.preferences.layout === "custom" && root.preferences.graphs
+        visible: root.preferences.layout === "default" && root.preferences.graphs
         Layout.fillWidth: true
         PulseText { text: "Chart width"; Layout.fillWidth: true }
         Button { text: "−"; enabled: root.preferences.chartWidth > 20; onClicked: root.change("chartWidth", root.preferences.chartWidth - 5) }
@@ -144,7 +152,7 @@ ColumnLayout {
     Title { text: "Metrics & order" }
     Repeater {
         model: root.preferences.metrics.concat(LayoutModel.metricIds.filter(id => root.preferences.metrics.indexOf(id) < 0))
-        RowLayout {
+        ColumnLayout {
             required property string modelData
             readonly property bool selected: root.preferences.metrics.indexOf(modelData) >= 0
             readonly property color metricColor: ({
@@ -155,23 +163,69 @@ ColumnLayout {
                 heat: Metrics.palette("yellow", "color3", Color.urgent)
             })[modelData]
             Layout.fillWidth: true
-            Rectangle {
-                Layout.preferredWidth: Style.space(28)
-                Layout.preferredHeight: Style.space(28)
-                radius: Style.cornerRadius
-                color: Qt.alpha(parent.metricColor, 0.10)
-                opacity: parent.selected ? 1 : 0.45
-                PulseIcon { anchors.centerIn: parent; width: Style.space(22); height: Style.space(22); name: modelData; ink: parent.parent.metricColor }
+            spacing: Style.space(4)
+            RowLayout {
+                Layout.fillWidth: true
+                Rectangle {
+                    Layout.preferredWidth: Style.space(28)
+                    Layout.preferredHeight: Style.space(28)
+                    radius: Style.cornerRadius
+                    color: Qt.alpha(metricColor, 0.10)
+                    opacity: selected ? 1 : 0.45
+                    PulseIcon { anchors.centerIn: parent; width: Style.space(22); height: Style.space(22); name: modelData; ink: metricColor }
+                }
+                Toggle {
+                    Layout.fillWidth: true
+                    label: ({cpu: "CPU", memory: "Memory", gpu: root.gpus.length > 1 ? "GPU utilization (" + root.gpus.length + ")" : "GPU utilization", heat: "Temperatures", disk: "Disk /"})[modelData]
+                    checked: selected
+                    enabled: !checked || root.preferences.metrics.length > 1
+                    onClicked: root.toggleMetric(modelData)
+                }
+                Button { text: "↑"; tooltipText: "Move earlier"; enabled: selected && root.preferences.metrics.indexOf(modelData) > 0; onClicked: root.move(modelData, -1) }
+                Button { text: "↓"; tooltipText: "Move later"; enabled: selected && root.preferences.metrics.indexOf(modelData) < root.preferences.metrics.length - 1; onClicked: root.move(modelData, 1) }
+            }
+            Repeater {
+                model: modelData === "gpu" ? root.gpus : []
+                RowLayout {
+                    required property var modelData
+                    required property int index
+                    Layout.leftMargin: Style.space(32)
+                    Layout.fillWidth: true
+                    spacing: Style.space(5)
+                    PulseText {
+                        text: "GPU " + (index + 1) + (modelData.name ? " · " + modelData.name : "")
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        font.pixelSize: Style.font.bodySmall
+                        opacity: 0.7
+                    }
+                    PulseText { text: "Load"; font.pixelSize: Style.font.caption; opacity: 0.6 }
+                    Toggle {
+                        showLabel: false
+                        label: "GPU " + (index + 1) + " utilization"
+                        checked: LayoutModel.gpuEnabled(root.settings, "gpuVisibility", modelData.id)
+                        enabled: selected
+                        onClicked: root.toggleGpu("gpuVisibility", modelData.id)
+                    }
+                    PulseText { text: "Temp"; font.pixelSize: Style.font.caption; opacity: 0.6 }
+                    Toggle {
+                        showLabel: false
+                        label: "GPU " + (index + 1) + " temperature"
+                        checked: LayoutModel.gpuEnabled(root.settings, "gpuTemperatureVisibility", modelData.id)
+                        enabled: root.preferences.metrics.indexOf("heat") >= 0
+                        onClicked: root.toggleGpu("gpuTemperatureVisibility", modelData.id)
+                    }
+                }
             }
             Toggle {
+                visible: modelData === "heat"
                 Layout.fillWidth: true
-                label: ({cpu: "CPU", memory: "Memory", gpu: "GPU", heat: "CPU / GPU temperatures", disk: "Disk /"})[modelData]
-                checked: parent.selected
-                enabled: !checked || root.preferences.metrics.length > 1
-                onClicked: root.toggleMetric(modelData)
+                Layout.leftMargin: Style.space(32)
+                label: "CPU temperature"
+                checked: root.settings.cpuTemperature !== false
+                enabled: selected
+                onClicked: root.change("cpuTemperature", !checked)
             }
-            Button { text: "↑"; tooltipText: "Move earlier"; enabled: parent.selected && root.preferences.metrics.indexOf(modelData) > 0; onClicked: root.move(modelData, -1) }
-            Button { text: "↓"; tooltipText: "Move later"; enabled: parent.selected && root.preferences.metrics.indexOf(modelData) < root.preferences.metrics.length - 1; onClicked: root.move(modelData, 1) }
         }
     }
     Title { text: "Detail panel" }

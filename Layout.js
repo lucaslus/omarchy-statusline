@@ -1,14 +1,22 @@
 .pragma library
 const metricIds = ["cpu", "memory", "gpu", "heat", "disk"]
+function adapters(sample) {
+    if (Array.isArray(sample.gpus)) return sample.gpus
+    return sample.gpu && sample.gpu.id ? [sample.gpu] : []
+}
+function gpuEnabled(options, key, id) {
+    return !options[key] || options[key][id] !== false
+}
 function normalize(options) {
-    const layout = ["overview", "compact", "minimal", "custom"].indexOf(options.layout) >= 0
-        ? options.layout : options.compact === true ? "compact" : "overview"
+    const layout = options.layout === "custom" || options.layout === "compact" ? "default"
+        : ["overview", "minimal", "default"].indexOf(options.layout) >= 0
+        ? options.layout : "default"
     const order = Array.isArray(options.metrics) ? options.metrics : ["cpu", "memory", "gpu", "heat"]
     const metrics = order.filter((id, i) => metricIds.indexOf(id) >= 0 && order.indexOf(id) === i)
     return {layout: layout, metrics: metrics.length ? metrics : ["cpu"],
-        graphs: layout === "custom" ? options.showGraphs !== false : layout !== "minimal",
-        stacked: layout === "overview" || (layout === "custom" && options.stackedLabels === true),
-        chartWidth: layout === "custom" ? Math.max(20, Math.min(80, Number(options.chartWidth) || 40)) : layout === "overview" ? 48 : 28}
+        graphs: layout === "default" ? options.showGraphs !== false : layout !== "minimal",
+        stacked: layout === "overview" || (layout === "default" && options.stackedLabels === true),
+        chartWidth: layout === "default" ? Math.max(20, Math.min(80, Number(options.chartWidth) || 40)) : layout === "overview" ? 48 : 28}
 }
 
 // The shell currently positions its three sections independently. Measure the

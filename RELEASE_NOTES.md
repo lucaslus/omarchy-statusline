@@ -1,15 +1,16 @@
-Omarchy Statusline v0.2.3 delegates plugin updates to Omarchy’s plugin manager.
+# Omarchy Statusline v0.3.0
 
-## Fixes and improvements
+This release adds per-adapter GPU monitoring throughout the bar, settings, and detail panel.
 
-- Removed the custom Python Git updater and its remote checks, downloads and update application code.
-- Settings → Updates now reads the installed version from the local manifest and shows the host plugin update command, a marketplace link and an explicit shell reload action.
-- Addressed marketplace review #7752: the plugin no longer fetches mutable origin HEAD or buffers remote Git output and manifest data.
-- System monitoring, layouts and saved preferences are unchanged.
+## What's new
 
-## 本次修复
+- Show each detected GPU's utilization and temperature separately in the status bar, with its own history. Settings identifies adapters by name and lets you toggle each GPU's load and temperature readouts independently; preferences are saved by adapter ID.
+- Show every detected GPU in the detail panel with its own utilization, VRAM, power, fan, temperature, hotspot, and history where the hardware exposes them. CPU temperature now sits with CPU information. The separate temperature section has been removed.
+- Simplify bar presets to Default, Overview, and Minimal. Default is the initial preset; older `custom` and `compact` bar preferences continue to load as Default. Minimal uses short labels and hides charts.
+- Remove the widget's selected outline and increase the gap between bar content and Omarchy's open-panel indicator.
+- Replace the README and marketplace preview screenshots with native captures. Hackerman and Ristretto are labeled as examples; the widget follows the active Omarchy theme.
 
-移除插件自带的 Git 检查和更新逻辑，改由 Omarchy 插件管理器处理更新。设置页保留本地版本显示、更新命令说明、市场链接和重载 Shell 按钮。
+Unsupported sensor values continue to display `—`. AMD hardware and the native QML integration were exercised locally; NVIDIA telemetry remains covered by fixtures rather than a physical NVIDIA test.
 
 ## Updating
 
@@ -19,14 +20,13 @@ For a normal Git-managed installation, run:
 omarchy plugin update lucas.system-pulse
 ```
 
-Follow Omarchy’s prompts, then run `omarchy restart shell` to load the new QML components. This restarts the whole shell. Development installations should be updated manually through their source checkout.
-
-New installation (Quickshell-based Omarchy Shell and Python 3.11+ required):
-
-```sh
-omarchy plugin add https://github.com/lucaslus/omarchy-statusline.git --enable --yes
-```
+Follow Omarchy's prompts, then use **Reload shell** in Settings or run `omarchy restart shell` to load the new QML components. Development symlinks use their local source checkout instead. The Marketplace's verified listing is updated separately through its exact-commit verification and publication workflow.
 
 ## Validation
 
-Run the Python unit tests, installer/uninstaller shell syntax checks, Omarchy manifest validator and native QML regression suite. The QML suite covers local version display and host update guidance alongside monitoring lifecycle, settings and responsive layouts.
+- `omarchy plugin validate .`
+- `python3 -m unittest discover -s tests -v` (15 tests)
+- `python3 scripts/test-qml.py` (native QML regression suite)
+- `bash -n scripts/install.sh scripts/uninstall.sh`
+- `python3 -m json.tool manifest.json`
+- `git diff --check`
