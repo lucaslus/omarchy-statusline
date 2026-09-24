@@ -47,6 +47,28 @@ ColumnLayout {
     }
     component Title: PulseText { font.pixelSize: Style.font.bodySmall; opacity: 0.6; Layout.fillWidth: true; Layout.topMargin: Style.space(6) }
     component Hint: PulseText { Layout.fillWidth: true; wrapMode: Text.Wrap; opacity: 0.7; font.pixelSize: Style.font.bodySmall }
+    component UpdateCard: Rectangle {
+        id: card
+        property string heading: ""
+        property string description: ""
+        property string command: ""
+        property color tone: Color.accent
+        Layout.fillWidth: true
+        implicitHeight: cardBody.implicitHeight + Style.space(20)
+        radius: Style.cornerRadius
+        color: Qt.alpha(tone, 0.08)
+        border.width: 1
+        border.color: Qt.alpha(tone, 0.3)
+        ColumnLayout {
+            id: cardBody
+            anchors.fill: parent
+            anchors.margins: Style.space(10)
+            spacing: Style.space(5)
+            PulseText { text: card.heading; color: card.tone; font.bold: true; Layout.fillWidth: true }
+            PulseText { objectName: card.command ? "pulseUpdateCommand" : ""; visible: !!card.command; text: card.command; color: Color.popups.text; font.pixelSize: Style.font.bodySmall; Layout.fillWidth: true; wrapMode: Text.WrapAnywhere }
+            PulseText { text: card.description; color: Color.popups.text; opacity: 0.75; font.pixelSize: Style.font.bodySmall; Layout.fillWidth: true; wrapMode: Text.Wrap }
+        }
+    }
     component Button: Ui.Button {
         focusable: true
         fontSize: Style.font.bodySmall
@@ -111,6 +133,7 @@ ColumnLayout {
                 required property var modelData
                 text: modelData.label
                 iconText: modelData.icon
+                accent: ({layout: Metrics.palette("blue", "color4", Color.accent), monitoring: Metrics.palette("green", "color2", Color.accent), updates: Metrics.palette("magenta", "color5", Color.accent)})[modelData.id]
                 selected: root.category === modelData.id
                 onClicked: root.category = modelData.id
             }
@@ -125,9 +148,10 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: Style.space(7)
         Repeater {
-            model: [{id: "default", label: "Default", icon: "⚙"}, {id: "overview", label: "Overview", icon: "▦"}, {id: "minimal", label: "Minimal", icon: "−"}]
+            model: [{id: "default", label: "Default", icon: "⚙"}, {id: "minimal", label: "Minimal", icon: "−"}]
             Button {
                 required property var modelData
+                objectName: "pulseBarLayout-" + modelData.id
                 text: modelData.label
                 iconText: modelData.icon
                 selected: root.preferences.layout === modelData.id
@@ -139,7 +163,6 @@ ColumnLayout {
         visible: root.preferences.layout === "default"
         Layout.fillWidth: true
         Toggle { Layout.fillWidth: true; label: "⌁  Charts"; checked: root.preferences.graphs; onClicked: root.change("showGraphs", !checked) }
-        Toggle { Layout.fillWidth: true; label: "☷  Stacked labels"; checked: root.preferences.stacked; onClicked: root.change("stackedLabels", !checked) }
     }
     RowLayout {
         visible: root.preferences.layout === "default" && root.preferences.graphs
@@ -267,21 +290,26 @@ ColumnLayout {
     ColumnLayout {
         visible: root.category === "updates"
         Layout.fillWidth: true
-        spacing: Style.space(8)
-    Title { text: root.installedVersion ? "Version " + root.installedVersion : "Omarchy Statusline" }
-    Hint { text: "Manage updates through Omarchy’s plugin manager." }
-    Hint {
-        objectName: "pulseUpdateInstructions"
-        text: "For a normal installation, run in a terminal:\nomarchy plugin update lucas.system-pulse"
+        spacing: Style.space(10)
+    RowLayout {
+        Layout.fillWidth: true
+        PulseText { text: "Installed"; font.pixelSize: Style.font.bodySmall; opacity: 0.7 }
+        PulseText { text: root.installedVersion ? "v" + root.installedVersion : "—"; color: Metrics.palette("magenta", "color5", Color.accent); font.bold: true; Layout.fillWidth: true }
     }
-    Hint { text: "Development installations: update your source checkout manually. Reload Omarchy Shell after updating; this restarts the whole shell." }
+    UpdateCard {
+        heading: "Update from GitHub"
+        command: "omarchy plugin update lucas.system-pulse"
+        description: "Run in a terminal. Omarchy uses the GitHub remote saved at installation."
+        tone: Metrics.palette("blue", "color4", Color.accent)
+    }
+    Hint { objectName: "pulseUpdateInstructions"; text: "Local development install? Update its source checkout instead." }
     Flow {
         Layout.fillWidth: true; spacing: Style.space(7)
         Button {
-            iconText: "↗"; text: "Plugin marketplace"
-            onClicked: Qt.openUrlExternally("https://plugins.omarchy.org/")
+            iconText: "↗"; text: "Omarchy plugin guide"
+            accent: Metrics.palette("blue", "color4", Color.accent)
+            onClicked: Qt.openUrlExternally("https://omarchy.org/manual/shell-plugins/")
         }
-        Button { iconText: "↻"; text: "Reload shell"; tooltipText: "Restart Omarchy Shell to apply updates"; onClicked: Quickshell.execDetached(["omarchy", "restart", "shell"]) }
     }
     }
 }

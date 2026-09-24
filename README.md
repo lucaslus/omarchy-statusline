@@ -8,11 +8,11 @@ The default widget shows CPU load with per-core bars, memory usage with a meter,
 
 ## Screenshots
 
-These screenshots are examples of the same widget layout under two Omarchy themes.
+These screenshots show the same widget layout under three dark Omarchy themes.
 
 ### Example: Hackerman
 
-![Omarchy status bar showing CPU, memory, GPU1 and GPU2 utilization, separate CPU and GPU temperatures, and disk usage](docs/images/themes/hackerman/status-bar.png)
+![Omarchy status bar showing CPU, memory, GPU1 and GPU2 utilization, and separate CPU and GPU temperatures](docs/images/themes/hackerman/status-bar.png)
 
 | System monitor | Settings |
 | --- | --- |
@@ -26,7 +26,15 @@ These screenshots are examples of the same widget layout under two Omarchy theme
 | --- | --- |
 | ![Ristretto system panel showing separate readings for two GPUs](docs/images/themes/ristretto/system-panel.png) | ![Ristretto settings listing both GPUs with separate switches](docs/images/themes/ristretto/settings.png) |
 
-Omarchy Statusline follows whichever Omarchy theme is active; Hackerman and Ristretto are examples, not the only supported themes. No plugin theme setting is needed.
+### Example: Tokyo Night
+
+![Omarchy status bar in the Tokyo Night theme showing both GPUs and their temperatures](docs/images/themes/tokyo-night/status-bar.png)
+
+| System monitor | Settings |
+| --- | --- |
+| ![Tokyo Night system panel showing separate readings for two GPUs](docs/images/themes/tokyo-night/system-panel.png) | ![Tokyo Night settings listing both GPUs with separate switches](docs/images/themes/tokyo-night/settings.png) |
+
+Omarchy Statusline follows whichever Omarchy theme is active; these three themes are examples, not the only supported themes. No plugin theme setting is needed.
 
 ## Quick install
 
@@ -82,10 +90,10 @@ Click the widget to open the detail panel, then choose **Settings**. Right-click
 
 The settings page has three tabs, with detail panel options inside Layout:
 
-- **Layout**: Default (the initial setup, with adjustable charts and labels), Overview (stacked labels and charts), or Minimal (short labels and no charts). Select and reorder CPU/memory/GPU/temperature/disk groups, then control each detected GPU's utilization and temperature readouts separately. In Default, you can show or hide charts, choose stacked labels, and adjust chart width from 20–80 logical pixels. At least one metric group stays enabled. Existing `custom` and `compact` bar settings load as Default.
+- **Layout**: Default (the initial setup, with adjustable charts) or Minimal (full metric labels and no charts). Each bar metric has its label on the left and its value overlaid on the chart on the right. Select and reorder CPU/memory/GPU/temperature/disk groups, then control each detected GPU's utilization and temperature readouts separately. In Default, you can show or hide charts and adjust chart width from 20–80 logical pixels. At least one metric group stays enabled. Existing `overview`, `custom`, and `compact` bar settings load as Default; saved `stackedLabels` values are ignored.
 - **Detail panel (Layout)**: System and Settings share a 440 × 558 logical-pixel content frame, constrained by available screen space. Overview shows history below each metric; Compact uses smaller rows without those history strips. Temperature history follows the history visibility setting.
 - **Monitoring**: choose 1, 2, or 5 second sampling; configure startup; pause/resume; exit this session; or disable the plugin entirely.
-- **Updates**: inspect the installed version, find Omarchy’s plugin update command, open the marketplace, and reload Omarchy Shell afterward.
+- **Updates**: see the installed version, the Git-managed update command, and the official plugin guide. Local development installs update through their source checkout.
 
 Bar width adapts independently to the space available on each monitor, reserving room for the clock and neighboring widgets. On narrow screens it hides charts first, then shows only the metrics that fit in your chosen order; click for all details. If necessary it collapses to a small launcher. The full layout returns when space is available, without changing saved settings. The plugin fits the host bar and never creates another bar. Left/right vertical bars use the CPU/memory readout and the same settings and detail panel.
 
@@ -97,7 +105,7 @@ omarchy-shell shell summon lucas.system-pulse '{}'
 omarchy-shell shell hide lucas.system-pulse
 ```
 
-For more readable stacked labels, set `size-horizontal = 36` in the `[bar]` section of `~/.config/omarchy/shell.toml` (merge with existing settings). This machine preference survives theme switches and affects the whole bar. The installer does not change bar height automatically.
+Bar height is controlled by `size-horizontal` in the `[bar]` section of `~/.config/omarchy/shell.toml`. This machine preference affects the whole bar; the installer does not change it.
 
 ## Startup, pause and exit
 
@@ -115,9 +123,9 @@ Use Omarchy’s plugin manager for a normal Git-managed installation:
 omarchy plugin update lucas.system-pulse
 ```
 
-Follow the host command’s prompts. **Settings → Updates** displays this command and links to the plugin marketplace. The plugin itself does not check remote repositories, download updates or apply Git changes. Update behavior and confirmation are managed by the installed Omarchy version.
+Run it in a terminal and follow Omarchy’s prompts. `plugin add` takes the GitHub repository URL for a first installation; `plugin update` takes the installed plugin ID and uses its saved Git remote. **Settings → Updates** shows the update command and links to the [Omarchy plugin guide](https://omarchy.org/manual/shell-plugins/). The plugin itself does not download or apply updates.
 
-After updating, use **Reload shell** or `omarchy restart shell` to clear cached QML components; this restarts the whole shell. Development symlinks and worktrees should be updated manually through their source checkout.
+Omarchy rescans plugins after a Git-managed update, and plugin file changes normally reload automatically. If the updated interface does not appear, run `omarchy restart shell` to clear cached QML components. Development symlinks and worktrees should be updated through their source checkout.
 
 ## Themes
 

@@ -99,8 +99,15 @@ ShellRoot {
                 app.check(app.visibleTexts(detail).includes("Temp 41°C"), "CPU temperature appears in CPU detail row")
                 app.check(!app.visibleTexts(detail).includes("Temperatures"), "detail has no separate temperature section")
                 app.check(LayoutModel.normalize({metrics: ['invalid', 'cpu', 'cpu']}).metrics.join() === 'cpu', "layout validates metric IDs")
-                app.check(LayoutModel.normalize({}).layout === 'default' && LayoutModel.normalize({layout: 'custom'}).layout === 'default' && LayoutModel.normalize({layout: 'compact'}).layout === 'default', "default layout accepts legacy presets")
+                app.check(LayoutModel.normalize({}).layout === 'default' && LayoutModel.normalize({layout: 'overview'}).layout === 'default' && LayoutModel.normalize({layout: 'custom'}).layout === 'default' && LayoutModel.normalize({layout: 'compact'}).layout === 'default', "default layout accepts legacy presets")
                 app.check(!LayoutModel.normalize({layout:'minimal'}).graphs, "minimal hides charts")
+                first.item.settings = {layout: 'minimal'}
+                app.check(first.item.metricLabel(first.item.metrics.cpu) === 'CPU' && first.item.metricLabel(first.item.metrics.memory) === 'MEM' && first.item.metricLabel(first.item.metrics['gpu:card0']) === 'GPU1' && first.item.metricLabel(first.item.metrics['gpuHeat:card1']) === 'GPU2', "minimal keeps full metric labels")
+                first.item.settings = {layout: 'default'}
+                const sampleInk = Qt.rgba(0.5, 0.8, 0.9, 1)
+                const inkOnLight = first.item.barInkFor(sampleInk, Qt.rgba(0.1, 0.1, 0.1, 1), true)
+                const inkOnDark = first.item.barInkFor(sampleInk, Qt.rgba(0.9, 0.9, 0.9, 1), true)
+                app.check(inkOnLight.r < sampleInk.r && inkOnLight.g < sampleInk.g && Math.abs(inkOnDark.r - sampleInk.r) < 0.01, "transparent bar preserves theme colors on dark backgrounds and darkens them on light backgrounds")
                 app.check(first.item.metricIds.join() === 'cpu,memory,gpu:card0,gpu:card1,cpuHeat,gpuHeat:card0,gpuHeat:card1', "bar expands both GPUs and temperatures")
                 app.check(first.item.metrics['gpu:card0'].name === 'GPU1' && first.item.metrics['gpu:card1'].name === 'GPU2', "bar labels both GPUs")
                 app.check(first.item.fittedCount === 7, "wide monitor keeps all GPU readouts: " + first.item.fittedCount + "/" + first.item.availableWidth + "/" + first.item.fullWidth)
@@ -134,8 +141,10 @@ ShellRoot {
                 Pulse.Metrics.sample = app.multiGpuSample
                 page.category = "updates"
                 app.check(page.installedVersion.length > 0, "settings reads installed version without updater process")
+                const updateCommand = app.find(page, "pulseUpdateCommand")
                 const updateGuide = app.find(page, "pulseUpdateInstructions")
-                app.check(updateGuide && updateGuide.visible && updateGuide.text.indexOf("omarchy plugin update lucas.system-pulse") >= 0, "updates page directs users to host plugin manager")
+                app.check(updateCommand && updateCommand.visible && updateCommand.text === "omarchy plugin update lucas.system-pulse", "updates page directs git installations to host plugin manager")
+                app.check(updateGuide && updateGuide.visible && updateGuide.text.indexOf("source checkout") >= 0, "updates page distinguishes local development installs")
                 page.category = "layout"
                 page.change("layout", "minimal")
                 app.check(detail.settings.layout === 'minimal', "settings emits persistable values")
@@ -147,10 +156,25 @@ ShellRoot {
                 app.check(detail.settings.metrics[1] === 'gpu', "metric order saves")
                 app.check(Pulse.Metrics.consumers === 2, "two monitors share collector")
                 app.check(first.item.fittedCount === 7, "widening restores all GPU readouts: " + first.item.fittedCount + "/" + first.item.availableWidth + "/" + first.item.fullWidth)
-                first.item.settings = {layout: "default"}
+                first.item.settings = {layout: "default", stackedLabels: true}
+                app.check(app.visibleTexts(first.item).includes("CPU") && app.visibleTexts(first.item).includes("20%") && app.visibleTexts(first.item).includes("GPU1") && app.visibleTexts(first.item).includes("12%"), "legacy stacked setting keeps separate labels and values")
+                const cpuLabel = app.find(first.item, "pulseMetricLabel-cpu")
+                const cpuValue = app.find(first.item, "pulseMetricValue-cpu")
+                const cpuChart = app.find(first.item, "pulseMetricChart-cpu")
+                const cpuGraph = app.find(first.item, "pulseMetricGraph-cpu")
+                app.check(cpuLabel && cpuValue && cpuChart && cpuGraph && first.item.fittedGraphs
+                    && cpuLabel.mapToItem(first.item, 0, 0).x < cpuValue.mapToItem(first.item, 0, 0).x
+                    && cpuValue.parent === cpuChart
+                    && cpuValue.y >= 0 && cpuValue.y + cpuValue.height <= cpuChart.height
+                    && cpuGraph.y < cpuValue.y + cpuValue.height,
+                    "bar metric has label left and value over chart")
+                app.check(!app.visibleTexts(page).some(text => text.indexOf("Stacked labels") >= 0), "settings no longer offers stacked labels")
+                app.check(app.find(page, "pulseBarLayout-default") && app.find(page, "pulseBarLayout-minimal") && !app.find(page, "pulseBarLayout-overview"), "bar layout offers only default and minimal")
                 app.check(first.item.metricLabel(first.item.metrics.cpu) === "CPU", "default keeps full metric names")
+                first.item.settings = {layout: "overview", stackedLabels: true}
+                app.check(first.item.preferences.layout === "default" && app.visibleTexts(first.item).includes("CPU") && app.visibleTexts(first.item).includes("20%"), "legacy overview loads as default")
                 first.item.settings = {layout: "minimal"}
-                app.check(first.item.metricLabel(first.item.metrics.cpu) === "C" && first.item.metricLabel(first.item.metrics['gpu:card1']) === "G2" && !first.item.fittedGraphs, "minimal has short labels and no charts")
+                app.check(first.item.metricLabel(first.item.metrics.cpu) === "CPU" && first.item.metricLabel(first.item.metrics['gpu:card1']) === "GPU2" && !first.item.fittedGraphs, "minimal has full labels and no charts")
                 first.item.settings = {layout: "default"}
                 app.check(first.item.settings.layout === "default", "automatic fitting preserves preferences")
                 first.active = false

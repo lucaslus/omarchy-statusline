@@ -32,16 +32,25 @@ Panel {
         return 0
     }
     function metricLabel(metric) {
-        return preferences.layout === "minimal" ? (metric.shortName || metric.name) : metric.name
+        return metric.name
     }
+    function barInkFor(ink, foreground, transparent) {
+        if (!transparent || 0.2126 * foreground.r + 0.7152 * foreground.g + 0.0722 * foreground.b > 0.5) return ink
+        return Qt.rgba(ink.r * 0.3 + foreground.r * 0.7,
+            ink.g * 0.3 + foreground.g * 0.7,
+            ink.b * 0.3 + foreground.b * 0.7, 1)
+    }
+    function barInk(ink) { return barInkFor(ink, barForeground, bar && bar.transparent) }
     function measuredWidth(count, graphs) {
         let result = Style.space(12) + Math.max(0, count - 1) * Style.space(12)
         for (let i = 0; i < count; i++) {
             const metric = metrics[metricIds[i]] || {name: "GPU", value: "—"}
             const name = metricLabel(metric)
-            const text = (preferences.stacked ? "" : name + " ") + metric.value
-            const labelWidth = Math.ceil(Math.max(bodyMetrics.advanceWidth(text), preferences.stacked ? captionMetrics.advanceWidth(name) : 0))
-            result += labelWidth + (graphs ? Style.space(5 + preferences.chartWidth) : 0)
+            const labelWidth = Math.ceil(captionMetrics.advanceWidth(name))
+            const readingWidth = Math.ceil(bodyMetrics.advanceWidth(metric.value))
+            result += labelWidth + Style.space(5) + (graphs
+                ? Math.max(readingWidth + Style.space(12), Style.space(preferences.chartWidth))
+                : readingWidth + Style.space(4))
         }
         return result
     }
@@ -54,17 +63,17 @@ Panel {
     readonly property var s: Metrics.sample
     readonly property var metrics: {
         const result = {
-            cpu: {name: "CPU", shortName: "C", value: Metrics.percent(s.cpu), ink: cpuColor, chart: "cores"},
-            disk: {name: "DISK", shortName: "D", value: Metrics.percent((s.disk || {}).percent), ink: Metrics.palette("cyan", "color6", cpuColor), chart: "meter", amount: (s.disk || {}).percent},
-            memory: {name: "MEM", shortName: "M", value: Metrics.percent(s.memory.percent), ink: memoryColor, chart: "meter", amount: s.memory.percent},
-            gpu: {name: "GPU", shortName: "G", value: "—", ink: gpuColor, chart: "sparkline", history: []},
-            cpuHeat: {name: "CPU", shortName: "CT", value: Metrics.temp(s.cpuTemperature), ink: heatColor, chart: "sparkline", history: Metrics.history.cpuTemp}
+            cpu: {name: "CPU", value: Metrics.percent(s.cpu), ink: cpuColor, chart: "cores"},
+            disk: {name: "DISK", value: Metrics.percent((s.disk || {}).percent), ink: Metrics.palette("cyan", "color6", cpuColor), chart: "meter", amount: (s.disk || {}).percent},
+            memory: {name: "MEM", value: Metrics.percent(s.memory.percent), ink: memoryColor, chart: "meter", amount: s.memory.percent},
+            gpu: {name: "GPU", value: "—", ink: gpuColor, chart: "sparkline", history: []},
+            cpuHeat: {name: "CPU", value: Metrics.temp(s.cpuTemperature), ink: heatColor, chart: "sparkline", history: Metrics.history.cpuTemp}
         }
         gpuAdapters.forEach((gpu, index) => {
             const label = gpuAdapters.length > 1 ? "GPU" + (index + 1) : "GPU"
             const history = Metrics.history.gpus[gpu.id] || {}
-            result["gpu:" + gpu.id] = {name: label, shortName: gpuAdapters.length > 1 ? "G" + (index + 1) : "G", value: Metrics.percent(gpu.percent), ink: gpuColor, chart: "sparkline", history: history.load || []}
-            result["gpuHeat:" + gpu.id] = {name: label, shortName: gpuAdapters.length > 1 ? "T" + (index + 1) : "GT", value: Metrics.temp(gpu.temperature), ink: heatColor, chart: "sparkline", history: history.temperature || []}
+            result["gpu:" + gpu.id] = {name: label, value: Metrics.percent(gpu.percent), ink: gpuColor, chart: "sparkline", history: history.load || []}
+            result["gpuHeat:" + gpu.id] = {name: label, value: Metrics.temp(gpu.temperature), ink: heatColor, chart: "sparkline", history: history.temperature || []}
         })
         return result
     }
@@ -94,29 +103,50 @@ Panel {
         Row {
             id: line
             anchors.centerIn: parent
-            anchors.verticalCenterOffset: -Style.space(3)
             spacing: Style.space(12)
             visible: !root.vertical && Metrics.sessionEnabled && root.fittedCount > 0
             opacity: Metrics.stale ? 0.4 : 1
             Repeater {
                 model: root.metricIds.slice(0, root.fittedCount)
                 Row {
+                    id: metricRow
                     required property string modelData
                     readonly property var metric: root.metrics[modelData] || ({name: "GPU", value: "—", ink: root.gpuColor, chart: "", history: []})
+                    readonly property color displayInk: root.barInk(metric.ink)
                     spacing: Style.space(5)
-                    Column {
+                    PulseText {
                         anchors.verticalCenter: parent.verticalCenter
-                        PulseText { text: root.metricLabel(metric); color: root.barForeground; opacity: 0.65; font.pixelSize: Style.font.caption; visible: root.preferences.stacked }
-                        PulseText { text: (!root.preferences.stacked ? root.metricLabel(metric) + " " : "") + metric.value; color: metric.ink }
+                        objectName: "pulseMetricLabel-" + modelData
+                        text: root.metricLabel(metric)
+                        color: root.barForeground
+                        opacity: 0.65
+                        font.pixelSize: Style.font.caption
                     }
                     Item {
-                        width: Style.space(root.preferences.chartWidth)
-                        height: Style.space(root.preferences.stacked ? 22 : 14)
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: root.fittedGraphs
-                        CoreBars { anchors.fill: parent; visible: metric.chart === "cores"; values: root.s.cores; ink: root.cpuColor; spacing: 1 }
-                        Meter { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: Style.space(6); visible: metric.chart === "meter"; value: metric.amount; ink: metric.ink }
-                        Sparkline { anchors.fill: parent; visible: metric.chart === "sparkline"; values: metric.history || []; ink: metric.ink }
+                        objectName: "pulseMetricChart-" + modelData
+                        width: root.fittedGraphs ? Math.max(Style.space(root.preferences.chartWidth), value.implicitWidth + Style.space(12)) : value.implicitWidth + Style.space(4)
+                        height: Style.space(23)
+                        Item {
+                            objectName: "pulseMetricGraph-" + modelData
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.bottom: parent.bottom
+                            height: Style.space(9)
+                            visible: root.fittedGraphs
+                            opacity: root.bar && root.bar.transparent ? 0.8 : 0.55
+                            CoreBars { anchors.fill: parent; visible: metric.chart === "cores"; values: root.s.cores; ink: metricRow.displayInk; spacing: 1 }
+                            Meter { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: Style.space(5); visible: metric.chart === "meter"; value: metric.amount; ink: metricRow.displayInk }
+                            Sparkline { anchors.fill: parent; visible: metric.chart === "sparkline"; values: metric.history || []; ink: metricRow.displayInk }
+                        }
+                        PulseText {
+                            id: value
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            objectName: "pulseMetricValue-" + modelData
+                            text: metric.value
+                            color: metricRow.displayInk
+                        }
                     }
                 }
             }
